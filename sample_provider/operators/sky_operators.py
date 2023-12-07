@@ -74,11 +74,6 @@ class SkyOperator(BaseOperator):
         if len(enabled_clouds) == 0: self.end_exec()
 
 
-
-
-
-
-
         try:
             # with RedirectPrinter():
             launch(self.cmd_lines)
