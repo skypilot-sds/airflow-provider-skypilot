@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import getpass
 import os.path
+import re
 import sys
 from typing import Mapping, Any, TYPE_CHECKING
 
 from airflow.models import BaseOperator
+from sky import core, ClusterStatus
+from sky.backends.backend_utils import get_cleaned_username
+from sky.cli import _get_glob_clusters, down
 
 from sample_provider.operators.bash_cmd import BashCmd
 
@@ -27,7 +31,7 @@ class SkyOperator(BaseOperator):
         *,
         sky_task_yaml: str,
         op_option_list: str | None = None,
-        sky_working_dir: str = '/opt/airflow/sky_working_dir',
+        sky_working_dir: str = '/opt/airflow/sky_workdir',
         **kwargs
     ) -> None :
         super().__init__(**kwargs)
@@ -38,6 +42,7 @@ class SkyOperator(BaseOperator):
         self.cmd_lines.extend(self.op_option_list)
         self.sky_working_dir = sky_working_dir
         self.home_dir = os.path.expanduser('~')
+        os.environ['SKYPILOT_MINIMIZE_LOGGING'] = '1'
 
 
     def cp_env_dir(self) -> None:
@@ -49,8 +54,6 @@ class SkyOperator(BaseOperator):
             os.symlink(src, dest)
 
     def execute(self, context:Context) -> Any:
-        print("!!!!!!!!!!!!!!!!!!", self.home_dir)
-        print("!!!!!!!!!!!!!!!!!!", getpass.getuser())
 
         self.pre_cwd = os.getcwd()
         os.chdir(self.home_dir)
@@ -59,40 +62,41 @@ class SkyOperator(BaseOperator):
 
         check_cmd = BashCmd(bash_command = "sky check")
         check_cmd.bash_execute(context)
-
-        # launch_cnd = "sky launch " + " ".join((self.cmd_lines))
-        # check_cmd = BashCmd(bash_command=launch_cnd)
-        # check_cmd.bash_execute(context)
-
-
-
-        sys.stdout = RedirectBuffer(sys.stdout)
-
         from sky import global_user_state
-        from sky.cli import launch
         enabled_clouds = global_user_state.get_enabled_clouds()
         if len(enabled_clouds) == 0: self.end_exec()
 
+        cluster = self.launch(context)
 
-        try:
-            # with RedirectPrinter():
-            launch(self.cmd_lines)
+        try: down([cluster, '-y'])
+        except SystemExit: pass
 
-        except SystemExit as e:
-            self.log.info("EXIT")
         self.log.info("Done")
         self.end_exec()
+        return cluster
 
     def end_exec(self):
         os.chdir(self.pre_cwd)
         return
 
+    def launch(self, context):
+        launch_cnd = "sky launch " + " ".join((self.cmd_lines))
+        check_cmd = BashCmd(bash_command=launch_cnd)
+        line_query ="Running task on cluster"
+        line_captured = check_cmd.bash_exec_and_get_matched_line(context, [line_query])
+        line_captured = line_captured[line_query][0]
 
-class RedirectBuffer:
-    def __init__(self, oldout):
-        self.out = oldout
-    def write(self, msg):
-        msgs = msg.split
-        self.out.write("!!!!!!"+msg)
-    def flush(self):
-        self.out.flush()
+        username = get_cleaned_username()
+        cluster_name_pattern = re.compile(r'sky-[0-9a-fA-F]{4}-'+username)
+        cluster_name = re.search(cluster_name_pattern, line_captured).group()
+
+        query_clusters = _get_glob_clusters([cluster_name], silent=True)
+        cluster_recoreds = core.status(cluster_names=query_clusters, refresh=False)
+        cluster_recored = cluster_recoreds[0]
+        status = cluster_recored['status']
+        assert status == ClusterStatus.UP, "Cluster is not up"
+
+        return cluster_name
+
+
+
