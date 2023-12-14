@@ -6,10 +6,11 @@ import re
 import sys
 from typing import Mapping, Any, TYPE_CHECKING
 
+import sky
 from airflow.models import BaseOperator
 from sky import core, ClusterStatus
 from sky.backends.backend_utils import get_cleaned_username
-from sky.cli import _get_glob_clusters, down
+from sky.cli import _get_glob_clusters
 
 from sample_provider.operators.bash_cmd import BashCmd
 
@@ -19,7 +20,7 @@ from sample_provider.operators.utils import RedirectPrinter
 if TYPE_CHECKING:
     from airflow.utils.context import Context
 
-class SkyOperator(BaseOperator):
+class SkyLaunchOperator(BaseOperator):
     template_fields = [
         "op_option_list"
     ]
@@ -31,12 +32,15 @@ class SkyOperator(BaseOperator):
         *,
         sky_task_yaml: str,
         op_option_list: str | None = None,
+        auto_down = True,
         sky_working_dir: str = '/opt/airflow/sky_workdir',
         **kwargs
     ) -> None :
         super().__init__(**kwargs)
+        if '~' in sky_task_yaml: sky_task_yaml = os.path.expanduser(sky_task_yaml)
         self.cmd_lines = [sky_task_yaml]
         self.op_option_list = op_option_list or []
+        self.auto_down = auto_down
 
         if '-y' not in self.op_option_list and '--yes' not in self.op_option_list: self.op_option_list.append("--yes")
         self.cmd_lines.extend(self.op_option_list)
@@ -68,8 +72,9 @@ class SkyOperator(BaseOperator):
 
         cluster = self.launch(context)
 
-        try: down([cluster, '-y'])
-        except SystemExit: pass
+        if self.auto_down:
+            sky.down(cluster)
+            self.log.info(f'Cluster {cluster} Terminated.')
 
         self.log.info("Done")
         self.end_exec()
@@ -90,8 +95,8 @@ class SkyOperator(BaseOperator):
         cluster_name_pattern = re.compile(r'sky-[0-9a-fA-F]{4}-'+username)
         cluster_name = re.search(cluster_name_pattern, line_captured).group()
 
-        query_clusters = _get_glob_clusters([cluster_name], silent=True)
-        cluster_recoreds = core.status(cluster_names=query_clusters, refresh=False)
+        # query_clusters = _get_glob_clusters([cluster_name], silent=True)
+        cluster_recoreds = sky.status(cluster_names=[cluster_name], refresh=False)
         cluster_recored = cluster_recoreds[0]
         status = cluster_recored['status']
         assert status == ClusterStatus.UP, "Cluster is not up"
@@ -100,3 +105,19 @@ class SkyOperator(BaseOperator):
 
 
 
+
+class SkyDownOperator(BaseOperator):
+    template_fields = ["cluster_name"]
+
+    def __init__(
+        self,
+        *,
+        cluster_name,
+        **kwargs
+    ) -> None :
+        super().__init__(**kwargs)
+        self.cluster_name = cluster_name
+
+    def execute(self, context:Context) -> Any:
+        sky.down(self.cluster_name)
+        self.log.info(f'Cluster {self.cluster_name} Terminated.')
