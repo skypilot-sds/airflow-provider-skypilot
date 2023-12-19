@@ -108,7 +108,7 @@ class SkyLaunchOperator(BaseOperator):
 
 class SkyDownOperator(BaseOperator):
     template_fields = ["cluster_name"]
-
+    ui_color = "#f4a460"
     def __init__(
         self,
         *,

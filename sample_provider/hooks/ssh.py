@@ -57,8 +57,6 @@ class SkySSHHook(BaseHook):
         cmd_timeout: int | None
         if not isinstance(timeout, ArgNotSet):
             cmd_timeout = timeout
-        elif not isinstance(self.cmd_timeout, ArgNotSet):
-            cmd_timeout = self.cmd_timeout
         else:
             cmd_timeout = CMD_TIMEOUT
         del timeout  # Too easy to confuse with "timedout" below.

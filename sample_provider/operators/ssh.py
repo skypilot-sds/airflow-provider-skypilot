@@ -50,7 +50,7 @@ class SkySSHOperator(BaseOperator):
     """
 
     template_fields: Sequence[str] = ("command", "environment", "cluster_name")
-
+    ui_color = "#f4a460"
 
     def __init__(
         self,
