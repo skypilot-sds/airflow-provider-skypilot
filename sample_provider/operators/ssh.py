@@ -11,8 +11,10 @@ from airflow.configuration import conf
 from airflow.exceptions import AirflowException, AirflowProviderDeprecationWarning
 from airflow.models import BaseOperator
 from airflow.utils.types import NOTSET, ArgNotSet
+from sky import ClusterStatus
 
 from sample_provider.hooks.ssh import SkySSHHook
+from sample_provider.operators.sky_operators import check_available_cluster
 
 if TYPE_CHECKING:
     from paramiko.client import SSHClient
@@ -50,7 +52,7 @@ class SkySSHOperator(BaseOperator):
     """
 
     template_fields: Sequence[str] = ("command", "environment", "cluster_name")
-    ui_color = "#f4a460"
+    ui_color = "#82A8DC"
 
     def __init__(
         self,
@@ -109,6 +111,9 @@ class SkySSHOperator(BaseOperator):
 
     def execute(self, context=None) -> bytes | str:
         result: bytes | str
+
+        check_available_cluster(self.cluster_name, [ClusterStatus.UP])
+
         if self.command is None:
             raise AirflowException("SSH operator error: SSH command not specified. Aborting.")
 
