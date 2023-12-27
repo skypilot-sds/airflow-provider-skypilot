@@ -37,7 +37,6 @@ class SkyLaunchOperator(BaseOperator):
     template_fields = [
         "op_option_list"
     ]
-    template_fields_renderers = {"op_option_list": "py"}
     ui_color = "#82A8DC"
 
     def __init__(
@@ -245,7 +244,6 @@ class SkyRsyncDownOperator(SkyRsyncOperator):
         super().__init__(cluster_name=cluster_name, source=source, target=target, up=False, **kwargs)
 
 
-
 class SkyDownOperator(BaseOperator):
     template_fields = ("cluster_name",)
     ui_color = "#82A8DC"
@@ -263,3 +261,6 @@ class SkyDownOperator(BaseOperator):
         check_available_cluster(self.cluster_name, [ClusterStatus.UP, ClusterStatus.INIT, ClusterStatus.STOPPED])
         sky.down(self.cluster_name)
         self.log.info(f'Cluster {self.cluster_name} Terminated.')
+
+
+
