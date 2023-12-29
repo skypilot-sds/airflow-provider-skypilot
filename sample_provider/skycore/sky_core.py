@@ -1,66 +1,19 @@
 """Backend: runs on cloud virtual machines, managed by Ray."""
-import ast
-import copy
-import enum
-import getpass
-import inspect
-import json
-import math
+
 import os
-import pathlib
-import re
-import signal
 import subprocess
-import sys
 import tempfile
-import textwrap
-import threading
 import time
-import typing
-from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import  List, Optional, Set, Tuple, Union
 
 import colorama
-import filelock
-
-import sky
-from sky import backends
-from sky import cloud_stores
-from sky import clouds
-from sky import exceptions
-from sky import global_user_state
-from sky import optimizer
-from sky import provision as provision_lib
-from sky import resources as resources_lib
-from sky import sky_logging
-from sky import skypilot_config
-from sky import spot as spot_lib
-from sky import status_lib
 from sky import task as task_lib
 from sky.backends import backend_utils, CloudVmRayBackend, CloudVmRayResourceHandle
-from sky.backends import onprem_utils
-from sky.backends import wheel_utils
-from sky.data import data_utils
-from sky.data import storage as storage_lib
-from sky.provision import instance_setup
-from sky.provision import metadata_utils
-from sky.provision import provisioner
-from sky.skylet import autostop_lib
 from sky.skylet import constants
-from sky.skylet import job_lib
 from sky.skylet import log_lib
-from sky.usage import usage_lib
 from sky.utils import command_runner
-from sky.utils import common_utils
-from sky.utils import log_utils
-from sky.utils import resources_utils
-from sky.utils import rich_utils
 from sky.utils import subprocess_utils
 from sky.utils import timeline
-from sky.utils import tpu_utils
-from sky.utils import ux_utils
-
-logger = None
-
 
 _FETCH_IP_MAX_ATTEMPTS = 3
 SKY_REMOTE_WORKDIR = constants.SKY_REMOTE_WORKDIR
@@ -70,16 +23,13 @@ class CloudVmRayBackendAirExtend(CloudVmRayBackend):
         super().__init__()
         global logger
         logger = log
-        logger.info("!!!!!!!!!!!!!!!!!!!!! backend")
-
-
 
     def _setup(self, handle: CloudVmRayResourceHandle, task: task_lib.Task,
                detach_setup: bool) -> None:
         start = time.time()
         style = colorama.Style
         fore = colorama.Fore
-        logger.info("!!!!!!!!!!!!!!!!!!!!! SETUP")
+
         if task.setup is None:
             return
 

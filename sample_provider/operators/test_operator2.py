@@ -2,15 +2,11 @@ from __future__ import annotations
 
 import getpass
 import os.path
-import sys
-from typing import Mapping, Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from airflow.models import BaseOperator
 
-from sample_provider.operators.bash_cmd import BashCmd
-
-
-from sample_provider.operators.utils import RedirectPrinter
+from sample_provider.skycore.sky_bash_cmd import BashCmd
 
 if TYPE_CHECKING:
     from airflow.utils.context import Context
