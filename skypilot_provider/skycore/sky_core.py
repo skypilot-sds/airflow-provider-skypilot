@@ -18,7 +18,11 @@ from sky.utils import timeline
 _FETCH_IP_MAX_ATTEMPTS = 3
 SKY_REMOTE_WORKDIR = constants.SKY_REMOTE_WORKDIR
 
+logger = None
+
+
 class CloudVmRayBackendAirExtend(CloudVmRayBackend):
+    """Modifies several methods of sky.backends.CloudVmRayBackend, to print the outputs in Airflow logs."""
     def __init__(self, log):
         super().__init__()
         global logger
@@ -119,7 +123,6 @@ class CloudVmRayBackendAirExtend(CloudVmRayBackend):
         end = time.time()
         logger.debug(f'Setup took {end - start} seconds.')
 
-
     @timeline.event
     def run_on_head(
         self,
@@ -137,33 +140,7 @@ class CloudVmRayBackendAirExtend(CloudVmRayBackend):
         process_stream: bool = True,
         **kwargs,
     ) -> Union[int, Tuple[int, str, str]]:
-        """Runs 'cmd' on the cluster's head node.
 
-        It will try to fetch the head node IP if it is not cached.
-
-        Args:
-            handle: The ResourceHandle to the cluster.
-            cmd: The command to run.
-
-            Advanced options:
-
-            port_forward: A list of ports to forward.
-            log_path: The path to the log file.
-            stream_logs: Whether to stream the logs to stdout/stderr.
-            ssh_mode: The mode to use for ssh.
-                See command_runner.SSHCommandRunner.SSHMode for more details.
-            under_remote_workdir: Whether to run the command under the remote
-                workdir ~/sky_workdir.
-            require_outputs: Whether to return the stdout and stderr of the
-                command.
-            separate_stderr: Whether to separate stderr from stdout.
-            process_stream: Whether to post-process the stdout/stderr of the
-                command, such as replacing or skipping lines on the fly. If
-                enabled, lines are printed only when '\r' or '\n' is found.
-
-        Raises:
-            exceptions.FetchIPError: If the head node IP cannot be fetched.
-        """
         # This will try to fetch the head node IP if it is not cached.
         stream_logs = True
         process_stream = True

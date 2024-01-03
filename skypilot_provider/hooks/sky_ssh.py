@@ -12,13 +12,19 @@ CMD_TIMEOUT = 10
 
 
 class SkySSHHook(BaseHook):
+
+    conn_name_attr = 'sky_ssh_conn_id'
+    default_conn_name = 'sky_ssh_default'
+    conn_type = 'sky_ssh'
+    hook_name = 'Sky_ssh'
+
     def __init__(self,
                  cluster_name:str ):
         super().__init__()
         self.remote_host = cluster_name
         self.client = None
 
-    def get_conn(self) ->paramiko.SSHClient:
+    def get_conn(self) -> paramiko.SSHClient:
 
         if not os.path.exists(os.path.expanduser("~/.ssh/config")):
             raise AirflowException("~/.ssh/config does not exist")

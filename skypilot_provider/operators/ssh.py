@@ -13,8 +13,8 @@ from airflow.models import BaseOperator
 from airflow.utils.types import NOTSET, ArgNotSet
 from sky import ClusterStatus
 
-from sample_provider.hooks.ssh import SkySSHHook
-from sample_provider.operators.sky_operators import check_available_cluster
+from skypilot_provider.hooks.sky_ssh import SkySSHHook
+from skypilot_provider.operators.sky_operators import check_available_cluster
 
 if TYPE_CHECKING:
     from paramiko.client import SSHClient

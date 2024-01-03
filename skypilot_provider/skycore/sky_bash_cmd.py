@@ -114,7 +114,7 @@ class SubprocessHook(BaseHook):
             os.killpg(os.getpgid(self.sub_process.pid), signal.SIGTERM)
 
 
-class BashCmd:
+class SkyBashCmd:
     def __init__(self,
                  bash_command: str,
                  output_encoding: str = 'utf-8'):
