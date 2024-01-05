@@ -21,35 +21,6 @@ if TYPE_CHECKING:
 
 
 class SkySSHOperator(BaseOperator):
-    """
-    SSHOperator to execute commands on given remote host using the ssh_hook.
-
-    :param ssh_hook: predefined ssh_hook to use for remote execution.
-        Either `ssh_hook` or `ssh_conn_id` needs to be provided.
-    :param ssh_conn_id: :ref:`ssh connection id<howto/connection:ssh>`
-        from airflow Connections. `ssh_conn_id` will be ignored if
-        `ssh_hook` is provided.
-    :param remote_host: remote host to connect (templated)
-        Nullable. If provided, it will replace the `remote_host` which was
-        defined in `ssh_hook` or predefined in the connection of `ssh_conn_id`.
-    :param command: command to execute on remote host. (templated)
-    :param conn_timeout: timeout (in seconds) for maintaining the connection. The default is 10 seconds.
-        Nullable. If provided, it will replace the `conn_timeout` which was
-        predefined in the connection of `ssh_conn_id`.
-    :param cmd_timeout: timeout (in seconds) for executing the command. The default is 10 seconds.
-        Nullable, `None` means no timeout. If provided, it will replace the `cmd_timeout`
-        which was predefined in the connection of `ssh_conn_id`.
-    :param environment: a dict of shell environment variables. Note that the
-        server will reject them silently if `AcceptEnv` is not set in SSH config. (templated)
-    :param get_pty: request a pseudo-terminal from the server. Set to ``True``
-        to have the remote process killed upon task timeout.
-        The default is ``False`` but note that `get_pty` is forced to ``True``
-        when the `command` starts with ``sudo``.
-    :param banner_timeout: timeout to wait for banner from the server in seconds
-
-    If *do_xcom_push* is *True*, the numeric exit code emitted by
-    the ssh session is pushed to XCom under key ``ssh_exit``.
-    """
 
     template_fields: Sequence[str] = ("command", "environment", "cluster_name")
     ui_color = "#82A8DC"
@@ -66,6 +37,23 @@ class SkySSHOperator(BaseOperator):
         get_pty: bool = False,
         **kwargs,
     ) -> None:
+        """SkySSHOperator to execute commands on given Sky cloud instance.
+        Args:
+            ssh_hook: predefined sky_ssh_hook to use to connect sky cloud instance.
+                Either `sky_ssh_hook` or `cluster_name` needs to be provided.
+            cluster_name: The name of the target cluster previously launched by SkyLaunchOperator. Can be specified by
+                str or by XComArg like "cluster_name=sky_launch_op.output". `cluster_name` will be ignored if
+                `sky_ssh_hook` is provided.
+            command: Command to execute on remote host. (templated)
+            conn_timeout: timeout (in seconds) for maintaining the connection. The default is 10 seconds.
+            cmd_timeout: timeout (in seconds) for executing the command. The default is 10 seconds.
+            environment: a dict of shell environment variables. Note that the
+                server will reject them silently if `AcceptEnv` is not set in SSH config. (templated)
+            get_pty: request a pseudo-terminal from the server. Set to ``True``
+                to have the remote process killed upon task timeout.
+                The default is ``False`` but note that `get_pty` is forced to ``True``
+                when the `command` starts with ``sudo``.
+        """
         super().__init__(**kwargs)
         if sky_ssh_hook and isinstance(sky_ssh_hook, SkySSHHook):
             self.ssh_hook = sky_ssh_hook

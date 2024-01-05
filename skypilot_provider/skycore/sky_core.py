@@ -1,4 +1,7 @@
-"""Backend: runs on cloud virtual machines, managed by Ray."""
+"""Backend: runs on cloud virtual machines, managed by Ray.
+
+ Modified several methods of sky.backends.CloudVmRayBackend, to print the outputs to Airflow logs.
+ """
 
 import os
 import subprocess
@@ -22,7 +25,7 @@ logger = None
 
 
 class CloudVmRayBackendAirExtend(CloudVmRayBackend):
-    """Modifies several methods of sky.backends.CloudVmRayBackend, to print the outputs in Airflow logs."""
+
     def __init__(self, log):
         super().__init__()
         global logger

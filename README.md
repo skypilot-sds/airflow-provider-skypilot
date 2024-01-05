@@ -1,13 +1,16 @@
 <p align="center">
   <a href="https://www.airflow.apache.org">
-    <img alt="Airflow" src="https://cwiki.apache.org/confluence/download/attachments/145723561/airflow_transparent.png?api=v2" width="60" />
+    <img alt="Airflow" src="https://cwiki.apache.org/confluence/download/attachments/145723561/airflow_transparent.png?api=v2" width="60" /> 
+  </a>
+  <a href="https://skypilot.readthedocs.io">
+    <img alt="Airflow" src="https://raw.githubusercontent.com/skypilot-org/skypilot/master/docs/source/images/skypilot-wide-light-1k.png" height="60" />
   </a>
 </p>
 <h1 align="center">
-  Airflow Sample Provider
+  Apache Airflow Provider for SkyPilot
 </h1>
   <h3 align="center">
-  Guidelines on building, deploying, and maintaining provider packages that will help Airflow users interface with external systems. Maintained with ❤️ by Astronomer.
+A provider you can utilize multiple clouds via SkyPilot, on the Air
 </h3>
 
 <br/>
