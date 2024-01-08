@@ -10,16 +10,11 @@
   Apache Airflow Provider for SkyPilot
 </h1>
   <h3 align="center">
-A provider you can utilize multiple clouds via SkyPilot, on the Air
+A provider you can utilize multiple clouds via SkyPilot, on Apache Airflow.
 </h3>
 
 <br/>
 
-This repository provides best practices for building, structuring, and deploying Airflow provider packages as independent python modules available on PyPI.
-
-Provider repositories must be public on Github and follow the structural and technical guidelines laid out in this Readme. Ensure that all of these requirements have been met before submitting a provider package for community review.
-
-Here, you'll find information on requirements and best practices for key aspects of your project:
 
 - File formatting
 - Development
