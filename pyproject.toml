@@ -3,20 +3,27 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "airflow-provider-sample"
+name = "airflow-provider-skypilot"
 authors = [
-    {name = "Pete DeJoy", email = "pete@astronomer.io"},
-    {name = "Josh Fell", email = "josh.d.fell@astronomer.io"},
+    {name = "Suk-hoon Jung", email = "pete@astronomer.io"},
 ]
 license = {text = "Apache License 2.0"}
 description = "A sample Apache Airflow provider package built by Astronomer."
 classifiers = [
     "Framework :: Apache Airflow",
     "Framework :: Apache Airflow :: Provider",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10"
 ]
 dynamic = ["version"]
 requires-python = ">=3.8"
-dependencies = ["apache-airflow>=2.4"]
+dependencies = [
+    "apache-airflow>=2.4",
+    "skypilot>=0.4.1",
+    "paramiko>=3.3.1"
+]
 
 [project.urls]
 Homepage = "https://astronomer.io"
@@ -27,13 +34,13 @@ file = "README.md"
 content-type = "text/markdown"
 
 [project.entry-points.apache_airflow_provider]
-provider_info = "sample_provider.__init__:get_provider_info"
+provider_info = "skypilot_provider.__init__:get_provider_info"
 
 [tool.setuptools]
 include-package-data = false
 
 [tool.setuptools.dynamic]
-version = {attr = "sample_provider.__version__"}
+version = {attr = "skypilot_provider.__version__"}
 
 [tool.setuptools.packages.find]
 exclude = ["*tests.*", "*tests"]
