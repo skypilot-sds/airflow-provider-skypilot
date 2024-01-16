@@ -91,7 +91,7 @@ sky_launch_task = SkyLaunchOperator(
 )
 ```
 If `auto_down=False`, the other operators can be connected to use the created Sky cluster. 
-Please refer to [example dag]() for consecutive Sky tasks. 
+Please refer to [example dag](https://github.com/skypilot-sds/airflow-provider-skypilot/blob/master/skypilot_provider/example_dags/sky_airflow_example.py) for consecutive Sky tasks. 
 
 
 
