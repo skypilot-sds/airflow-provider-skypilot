@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import logging
+import importlib
 import os
+import shutil
+import time
 
 from typing import Any, TYPE_CHECKING
 
-import paramiko
 from airflow import AirflowException
 from airflow.models import BaseOperator
 
@@ -13,9 +14,6 @@ import sky
 from sky.backends import backend_utils
 from sky.cli import _make_task_or_dag_from_entrypoint_with_overrides
 from sky import global_user_state, ClusterStatus, backends
-from sky.utils.command_runner import SSHCommandRunner
-
-from skypilot_provider.skycore.sky_bash_cmd import SkyBashCmd
 from skypilot_provider.skycore.sky_core import CloudVmRayBackendAirExtend
 from skypilot_provider.skycore.sky_log import SkyLogFilter
 
@@ -24,16 +22,38 @@ if TYPE_CHECKING:
 
 
 def check_available_cluster(cluster_name, available_status_list):
-    cluster_records = sky.status(cluster_names=[cluster_name], refresh=True)
+    cluster_records = sky.status(cluster_names=[cluster_name], refresh=False)
     if len(cluster_records) == 0:
         raise AirflowException(f'Cluster {cluster_name} does not exist in SkyPilot DB.')
     cluster_record = cluster_records[0]
+
     status = cluster_record['status']
     if status not in available_status_list:
         raise AirflowException(f'Status of {cluster_name} should be {str(available_status_list)}, but it is {status}')
 
 
-class SkyOperator(BaseOperator):
+def rm_path(path):
+    if os.path.isdir(path):
+        if os.path.islink(path):
+            os.unlink(path)
+        else:
+            shutil.rmtree(path)
+    else:
+        if os.path.islink(path):
+            os.unlink(path)
+        else:
+            os.remove(path)
+
+
+def make_symlink(src, dest):
+    os.symlink(src, dest)
+    while True:
+        time.sleep(0.05)
+        if os.path.exists(dest):
+            return
+
+
+class SkyBaseOperator(BaseOperator):
     """Interface for Sky operators.
 
     This interface adds a function to arrange the logs from Sky operators.
@@ -44,23 +64,40 @@ class SkyOperator(BaseOperator):
 
     def __init__(
             self,
+            *,
+            sky_home_dir: str,
             **kwargs
     ) -> None:
         super().__init__(**kwargs)
         self.user_home_dir = None
         self.pre_cwd = None
+        self.sky_home_dir = sky_home_dir
+
+    def _cp_env_dir(self) -> None:
+        for item in os.listdir(self.sky_home_dir):
+            src = os.path.join(self.sky_home_dir, item)
+            dest = os.path.join(self.user_home_dir, item)
+            if os.path.exists(dest):
+                rm_path(dest)
+            self.log.info(f'create symlink {dest} -> {src}')
+            make_symlink(src, dest)
 
     def execute(self, context: Context) -> Any:
-
+        self._add_sky_format_logger()
         self.user_home_dir = os.path.expanduser('~')
         self.pre_cwd = os.getcwd()
         os.chdir(self.user_home_dir)
-        self._add_sky_format_logger()
+
+        self._cp_env_dir()
+
+        # reload _DB inside global_user_state after _cp_env_dir()
+        # global_user_state._DB is initialized based on ~./sky/status.db file
+        importlib.reload(sky.global_user_state)
 
         result = self._sky_execute(context)
-
-        self._remove_sky_format_log_handler()
         os.chdir(self.pre_cwd)
+        self._remove_sky_format_log_handler()
+
         return result
 
     def _sky_execute(self, context: Context) -> Any:
@@ -97,7 +134,7 @@ class SkyOperator(BaseOperator):
             self.log.removeFilter(h)
 
 
-class SkyLaunchOperator(SkyOperator):
+class SkyLaunchOperator(SkyBaseOperator):
     def __init__(
             self,
             *,
@@ -109,7 +146,7 @@ class SkyLaunchOperator(SkyOperator):
             disk_size: int | None = None,
             auto_down: bool = True,
             image_id: str | None = None,
-            sky_home_dir: str | None = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = '/opt/airflow/sky_home_dir',
             **kwargs
     ) -> None:
         """Launches a cluster and executes a sky task.
@@ -133,8 +170,7 @@ class SkyLaunchOperator(SkyOperator):
         Note:
             Cloud settings specified by the args override the settings in the YAML, just like Skypilot does.
         """
-
-        super().__init__(**kwargs)
+        super().__init__(sky_home_dir=sky_home_dir, **kwargs)
 
         self.sky_task_yaml = os.path.expanduser(sky_task_yaml) if '~' in sky_task_yaml else sky_task_yaml
         self.cloud_provider = None if cloud == "cheapest" else cloud
@@ -144,14 +180,6 @@ class SkyLaunchOperator(SkyOperator):
         self.disk_size = disk_size
         self.auto_down = auto_down
         self.image_id = image_id
-        self.sky_home_dir = sky_home_dir
-
-    def _cp_env_dir(self) -> None:
-        for item in os.listdir(self.sky_home_dir):
-            src = os.path.join(self.sky_home_dir, item)
-            dest = os.path.join(self.user_home_dir, item)
-            if os.path.exists(dest): continue
-            os.symlink(src, dest)
 
     def _sky_execute(self, context: Context) -> Any:
         """
@@ -164,15 +192,12 @@ class SkyLaunchOperator(SkyOperator):
         if self.cloud_provider in ['local', 'k8s']:
             raise NotImplementedError(f'{self.cloud_provider} is not supported yet')
 
-        if self.sky_home_dir:
-            self._cp_env_dir()
-
-        check_cmd = SkyBashCmd(bash_command="sky check")
-        check_cmd.bash_execute(context)
+        # check_cmd = SkyBashCmd(bash_command="sky check")
+        # check_cmd.bash_execute(context)
 
         enabled_clouds = global_user_state.get_enabled_clouds()
         if len(enabled_clouds) == 0:
-            raise AirflowException(f"No CSP is enabled. Please copy CSP credential files into {self.sky_home_dir}")
+            raise AirflowException(f"No CSP is enabled. Please mount ~/.sky into {self.sky_home_dir}")
 
         cluster = self._launch()
 
@@ -202,10 +227,11 @@ class SkyLaunchOperator(SkyOperator):
             cluster_name=cluster_name,
             stream_logs=True,
         )
+        # rm_path(os.path.expanduser('~/.ssh'))
         return cluster_name
 
 
-class SkyExecOperator(SkyOperator):
+class SkyExecOperator(SkyBaseOperator):
     template_fields = ("cluster_name",)
 
     def __init__(
@@ -213,7 +239,7 @@ class SkyExecOperator(SkyOperator):
             *,
             cluster_name: str,
             sky_task_yaml: str,
-            sky_home_dir: str | None = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = '/opt/airflow/sky_home_dir',
             **kwargs
     ) -> None:
         """Executes a sky task on the specified cluster
@@ -229,18 +255,9 @@ class SkyExecOperator(SkyOperator):
                 directory. This is used to mount CSP credential files and user's codes from airflow host machine
                 to the worker where the sky operator actually runs. If None, the copy process will be skipped .
        """
-
-        super().__init__(**kwargs)
+        super().__init__(sky_home_dir=sky_home_dir, **kwargs)
         self.cluster_name = cluster_name
         self.sky_task_yaml = os.path.expanduser(sky_task_yaml) if '~' in sky_task_yaml else sky_task_yaml
-        self.sky_home_dir = sky_home_dir
-
-    def _cp_env_dir(self) -> None:
-        for item in os.listdir(self.sky_home_dir):
-            src = os.path.join(self.sky_home_dir, item)
-            dest = os.path.join(self.user_home_dir, item)
-            if os.path.exists(dest): continue
-            os.symlink(src, dest)
 
     def _sky_execute(self, context: Context) -> Any:
         """
@@ -249,16 +266,21 @@ class SkyExecOperator(SkyOperator):
         Returns:
             cluster: The name of the cluster for further use.
         """
+
+        enabled_clouds = global_user_state.get_enabled_clouds()
+        if len(enabled_clouds) == 0:
+            raise AirflowException(f"No CSP is enabled. Please mount ~/.sky into {self.sky_home_dir}")
+
         check_available_cluster(self.cluster_name, [ClusterStatus.UP])
-        if self.sky_home_dir:
-            self._cp_env_dir()
 
         cluster = self._exec(context)
         self.log.info("Done")
         return cluster
 
     def _exec(self, context):
+
         handle = global_user_state.get_handle_from_cluster_name(self.cluster_name)
+        self.log.info(handle.__repr__())
         if not isinstance(handle, backends.CloudVmRayResourceHandle):
             raise AirflowException(f'{self.cluster_name} is not an Airflow cluster')
         backend = CloudVmRayBackendAirExtend(self.log)
@@ -272,111 +294,14 @@ class SkyExecOperator(SkyOperator):
         return self.cluster_name
 
 
-class SkyRsyncOperator(SkyOperator):
-    """Interface for Rsync operators transfer files between the airflow worker and Sky cloud instance.
-
-    Rsync Up/Down operators are separately implemented for convenience.
-    """
+class SkyDownOperator(SkyBaseOperator):
     template_fields = ("cluster_name",)
 
     def __init__(
             self,
             *,
             cluster_name: str,
-            source: str,
-            target: str,
-            up: bool,
-            **kwargs
-    ) -> None:
-        super().__init__(**kwargs)
-        self.cluster_name = cluster_name
-        self.source = source
-        self.target = target
-        self.up = up
-
-    def _sky_execute(self, context: Context) -> Any:
-        raise NotImplementedError("SkyRsyncOperator must be accessed from its subclasses")
-
-    def _rsync(self, context: Context) -> Any:
-        check_available_cluster(self.cluster_name, [ClusterStatus.UP])
-        conf_file = os.path.expanduser("~/.ssh/config")
-        if not os.path.exists(conf_file):
-            raise AirflowException(f"{conf_file} does not exist")
-
-        config = paramiko.SSHConfig()
-
-        config.parse(open(conf_file))
-        info = config.lookup(self.cluster_name)
-        ident = info['identityfile']
-        if type(ident) is list:
-            ident = ident[0]
-
-        sky_ssh_comm_runner = SSHCommandRunner(ip=info['hostname'],
-                                               ssh_user=info['user'],
-                                               ssh_private_key=ident,
-                                               port=int(info['port']))
-
-        sky_ssh_comm_runner.rsync(source=self.source,
-                                  target=self.target,
-                                  up=self.up,
-                                  stream_logs=True)
-        return self.cluster_name
-
-
-class SkyRsyncUpOperator(SkyRsyncOperator):
-    def __init__(
-            self,
-            *,
-            cluster_name: str,
-            source: str,
-            target: str,
-            **kwargs
-    ) -> None:
-        """Syncs up from the airflow worker to the sky cloud instance
-
-        Args:
-            cluster_name: The name of the target cluster previously launched by SkyLaunchOperator. Can be specified by
-                str or by XComArg like "cluster_name=sky_launch_op.output".
-            source: The path of the source file or directory in the airflow worker.
-            target" The target path in the sky cloud instance.
-        """
-
-        super().__init__(cluster_name=cluster_name, source=source, target=target, up=True, **kwargs)
-
-    def _sky_execute(self, context: Context) -> Any:
-        return self._rsync(context)
-
-
-class SkyRsyncDownOperator(SkyRsyncOperator):
-    def __init__(
-            self,
-            *,
-            cluster_name: str,
-            source: str,
-            target: str,
-            **kwargs
-    ) -> None:
-        """Syncs down from the sky cloud instance to airflow worker.
-
-        Args:
-            cluster_name: The name of the target cluster previously launched by SkyLaunchOperator. Can be specified by
-                str or by XComArg like "cluster_name=sky_launch_op.output".
-            source: The path of the source file or directory in the sky cloud instance.
-            target" The target path in the airflow worker.
-        """
-        super().__init__(cluster_name=cluster_name, source=source, target=target, up=False, **kwargs)
-
-    def _sky_execute(self, context: Context) -> Any:
-        return self._rsync(context)
-
-
-class SkyDownOperator(SkyOperator):
-    template_fields = ("cluster_name",)
-
-    def __init__(
-            self,
-            *,
-            cluster_name: str,
+            sky_home_dir: str = '/opt/airflow/sky_home_dir',
             **kwargs
     ) -> None:
         """Syncs down from the sky cloud instance to airflow worker.
@@ -385,7 +310,7 @@ class SkyDownOperator(SkyOperator):
             cluster_name: The name of the target cluster previously launched by SkyLaunchOperator. Can be specified by
                 str or by XComArg like "cluster_name=sky_launch_op.output".
         """
-        super().__init__(**kwargs)
+        super().__init__(sky_home_dir=sky_home_dir, **kwargs)
         self.cluster_name = cluster_name
 
     def _sky_execute(self, context: Context) -> Any:

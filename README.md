@@ -10,17 +10,10 @@
   Apache Airflow Provider for SkyPilot
 </h1>
   <h3 align="center">
-A provider you can utilize multiple clouds via SkyPilot, on Apache Airflow.
+A provider you can utilize multiple clouds on Apache Airflow through SkyPilot.
 </h3>
 
 <br/>
-
-
-- File formatting
-- Development
-- Airflow integration
-- Documentation
-- Testing
 
 ## Formatting Standards
 

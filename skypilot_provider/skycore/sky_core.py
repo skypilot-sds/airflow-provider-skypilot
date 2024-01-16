@@ -7,16 +7,19 @@ import os
 import subprocess
 import tempfile
 import time
-from typing import  List, Optional, Set, Tuple, Union
+from typing import  List, Optional, Tuple, Union
 
 import colorama
-from sky import task as task_lib
+from sky import task as task_lib, global_user_state
 from sky.backends import backend_utils, CloudVmRayBackend, CloudVmRayResourceHandle
+from sky.backends.backend_utils import SKY_USER_FILE_PATH
 from sky.skylet import constants
 from sky.skylet import log_lib
 from sky.utils import command_runner
 from sky.utils import subprocess_utils
 from sky.utils import timeline
+from sky import resources as resources_lib
+
 
 _FETCH_IP_MAX_ATTEMPTS = 3
 SKY_REMOTE_WORKDIR = constants.SKY_REMOTE_WORKDIR
@@ -172,3 +175,29 @@ class CloudVmRayBackendAirExtend(CloudVmRayBackend):
             separate_stderr=separate_stderr,
             **kwargs,
         )
+
+    def _provision(
+            self,
+            task: task_lib.Task,
+            to_provision: Optional[resources_lib.Resources],
+            dryrun: bool,
+            stream_logs: bool,
+            cluster_name: str,
+            retry_until_up: bool = False) -> Optional[CloudVmRayResourceHandle]:
+
+        handle = super()._provision(task, to_provision, dryrun, stream_logs, cluster_name, retry_until_up)
+
+        cluster_yaml = handle.cluster_yaml
+        path, yaml_file_name = os.path.split(cluster_yaml)
+        handle._cluster_yaml = os.path.join(SKY_USER_FILE_PATH, yaml_file_name)
+
+        with timeline.Event('backend.provision.post_process'):
+            global_user_state.add_or_update_cluster(
+                handle.cluster_name,
+                handle,
+                task.resources,
+                ready=True,
+            )
+
+        return handle
+

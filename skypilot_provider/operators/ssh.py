@@ -1,29 +1,24 @@
 from __future__ import annotations
 
-import warnings
 from base64 import b64encode
 from functools import cached_property
 from typing import TYPE_CHECKING, Sequence
 
-from deprecated.classic import deprecated
-
 from airflow.configuration import conf
-from airflow.exceptions import AirflowException, AirflowProviderDeprecationWarning
-from airflow.models import BaseOperator
+from airflow.exceptions import AirflowException
 from airflow.utils.types import NOTSET, ArgNotSet
 from sky import ClusterStatus
 
 from skypilot_provider.hooks.sky_ssh import SkySSHHook
-from skypilot_provider.operators.sky_operators import check_available_cluster
+from skypilot_provider.operators.core_function import check_available_cluster, SkyBaseOperator
 
 if TYPE_CHECKING:
     from paramiko.client import SSHClient
 
 
-class SkySSHOperator(BaseOperator):
+class SkySSHOperator(SkyBaseOperator):
 
     template_fields: Sequence[str] = ("command", "environment", "cluster_name")
-    ui_color = "#82A8DC"
 
     def __init__(
         self,
@@ -35,6 +30,7 @@ class SkySSHOperator(BaseOperator):
         cmd_timeout: int | ArgNotSet | None = NOTSET,
         environment: dict | None = None,
         get_pty: bool = False,
+        sky_home_dir: str = '/opt/airflow/sky_home_dir',
         **kwargs,
     ) -> None:
         """SkySSHOperator to execute commands on given Sky cloud instance.
@@ -54,7 +50,7 @@ class SkySSHOperator(BaseOperator):
                 The default is ``False`` but note that `get_pty` is forced to ``True``
                 when the `command` starts with ``sudo``.
         """
-        super().__init__(**kwargs)
+        super().__init__(sky_home_dir=sky_home_dir, **kwargs)
         if sky_ssh_hook and isinstance(sky_ssh_hook, SkySSHHook):
             self.ssh_hook = sky_ssh_hook
 
@@ -97,7 +93,7 @@ class SkySSHOperator(BaseOperator):
         self.raise_for_status(exit_status, agg_stderr, context=context)
         return agg_stdout
 
-    def execute(self, context=None) -> bytes | str:
+    def _sky_execute(self, context=None) -> bytes | str:
         result: bytes | str
 
         check_available_cluster(self.cluster_name, [ClusterStatus.UP])
