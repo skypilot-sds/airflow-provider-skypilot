@@ -19,8 +19,8 @@ A provider you can utilize multiple clouds on Apache Airflow through SkyPilot.
 
 The SkyPilot provider for Apache Airflow was developed and tested on an environment with the following dependencies installed:
 
-- [Apache Airflow](https://airflow.apache.org/) >= 2.3
-- [SkyPilot](https://skypilot.readthedocs.io) >= 0.4
+- [Apache Airflow](https://airflow.apache.org/) >= 2.6.0
+- [SkyPilot](https://skypilot.readthedocs.io) >= 0.4.1
 
 The installation of the SkyPilot provider may start from the Airflow environment configured with Docker instructed in ["Running Airflow in Docker"](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html).
 Base on the docker configuration, add `pip install` command in the Dockerfile and build your own Docker image. 
