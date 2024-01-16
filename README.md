@@ -59,7 +59,7 @@ x-airflow-common:
       # mount sky working dir
       - ${HOME}/sky_workdir:/opt/airflow/sky_home_dir/sky_workdir
 ```
-This example mounts cloud credentials for `AWS`, `Azure`, `GCP`, and `SCP`. 
+This example mounts the cloud credentials for `AWS`, `Azure`, `GCP`, and `SCP`. 
 For SkyPilot metadata, mount `.sky/` and `.ssh/` directories. 
 The directory `sky_workdir/` is to share user resources including user codes and `yaml` task definition files for Skypilot execution.
 > Note that all sky directories are mounted under `sky_home_dir/`. 
@@ -90,7 +90,7 @@ sky_launch_task = SkyLaunchOperator(
     dag=dag
 )
 ```
-If `auto_down=False`, the other operators can be connected to use the created Sky cluster. 
+If `auto_down=False`, the other operators can be connected for further use of the created Sky cluster. 
 Please refer to [example dag](https://github.com/skypilot-sds/airflow-provider-skypilot/blob/master/skypilot_provider/example_dags/sky_airflow_example.py) for consecutive Sky tasks. 
 
 
