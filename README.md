@@ -29,16 +29,16 @@ RUN pip install --user airflow-provider-skypilot
 ```
 
 Then, make sure that SkyPilot is properly installed and initialized on the same environment. The initialization includes cloud account setup and access verification. 
-Please refer to [SkyPilot Installation](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html) 
+Please refer to [SkyPilot Installation](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html). 
 for more information 
 
 
 
 ## Configuration 
-The SkyPilot provider runs on a Airflow worker, but it shares and stores its metadata in the Airflow master node. 
+The SkyPilot provider runs on a Airflow worker, but it stores its metadata in the Airflow master node. 
 This scheme allows the execution of consecutive sky tasks run across independent workers by sharing the metadata.
 
-Following settings in the `docker-compose.yaml` configure the data sharing, including cloud credentials, metadata and workspace. 
+Following settings in the `docker-compose.yaml` defines the data sharing, including cloud credentials, metadata and workspace. 
 
 ```yaml
 x-airflow-common:
@@ -61,9 +61,38 @@ x-airflow-common:
 ```
 This example mounts cloud credentials for `AWS`, `Azure`, `GCP`, and `SCP`. 
 For SkyPilot metadata, mount `.sky/` and `.ssh/` directories. 
-The directory `sky_workdir/` is to share user resources including user codes and `yaml` task definition for Skypilot execution.
+The directory `sky_workdir/` is to share user resources including user codes and `yaml` task definition files for Skypilot execution.
 > Note that all sky directories are mounted under `sky_home_dir/`. 
-> They will be symbolic-linked to `${HOME}/` in workers by the setting an arguments `sky_home_dir='/opt/airflow/sky_home_dir'` of Sky operators.  
+> They will be symbolic-linked to `${HOME}/` in workers by the setting an argument `sky_home_dir='/opt/airflow/sky_home_dir'` of Sky operators.  
+
+
+
+## Usage
+The SkyPilot provider includes the following operators:
+- SkyLaunchOperator
+- SkyExecOperator
+- SkyDownOperator
+- SkySSHOperator
+- SkyRsyncUpOperator
+- SkyRsyncDownOperator
+
+`SkyLaunchOperator` creates an cloud cluster and executes a Sky task, as shown below:
+```python
+sky_launch_task = SkyLaunchOperator(
+    task_id="sky_launch_task",
+    sky_task_yaml="~/sky_workdir/sky_task.yaml",
+    cloud="cheapest", # aws|azure|gcp|scp|ibm ...
+    gpus="A100:1",
+    minimum_cpus=16,
+    minimum_memory=32,
+    auto_down=False,
+    sky_home_dir='/opt/airflow/sky_home_dir', #set by default
+    dag=dag
+)
+```
+If `auto_down=False`, the other operators can be connected to use the created Sky cluster. 
+Please refer to [example dag]() for consecutive Sky tasks. 
+
 
 
 
