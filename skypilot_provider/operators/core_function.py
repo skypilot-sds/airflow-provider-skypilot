@@ -280,7 +280,7 @@ class SkyExecOperator(SkyBaseOperator):
     def _exec(self, context):
 
         handle = global_user_state.get_handle_from_cluster_name(self.cluster_name)
-        self.log.info(handle.__repr__())
+
         if not isinstance(handle, backends.CloudVmRayResourceHandle):
             raise AirflowException(f'{self.cluster_name} is not an Airflow cluster')
         backend = CloudVmRayBackendAirExtend(self.log)

@@ -5,7 +5,6 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from skypilot_provider.operators import *
 
-
 with DAG(
     dag_id = "sky_airflow_example",
     schedule="0 0 1 1 *",
@@ -14,6 +13,11 @@ with DAG(
     dagrun_timeout=datetime.timedelta(minutes=60)
 ) as dag:
 
+    """
+    For git operation, git should be installed in worker image
+    please add the below command in the Dockerfile 
+    RUN apt update && apt install git -y
+    """
     git_clone_or_update_cmd = """
 export SKY_WORK_DIR=/opt/airflow/sky_home_dir/sky_workdir
 git -C $SKY_WORK_DIR/torch_examples pull \
@@ -81,7 +85,7 @@ EOF
     git_clone_task >> sky_launch_task
     make_yaml_task >> sky_launch_task
     sky_ssh_task >> sky_rsync_down_task
-
+    # the other relations are implicitly defined as the Operators use "previous_task.output"
 
 
 
