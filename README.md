@@ -29,8 +29,7 @@ RUN pip install --user airflow-provider-skypilot
 ```
 
 Then, make sure that SkyPilot is properly installed and initialized on the same environment. The initialization includes cloud account setup and access verification. 
-Please refer to [SkyPilot Installation](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html). 
-for more information 
+Please refer to [SkyPilot Installation](https://skypilot.readthedocs.io/en/latest/getting-started/installation.html) for more information. 
 
 
 
