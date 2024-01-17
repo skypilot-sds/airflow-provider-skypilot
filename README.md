@@ -23,7 +23,7 @@ The SkyPilot provider for Apache Airflow was developed and tested on an environm
 - [SkyPilot](https://skypilot.readthedocs.io) >= 0.4.1
 
 The installation of the SkyPilot provider may start from the Airflow environment configured with Docker instructed in ["Running Airflow in Docker"](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html).
-Base on the docker configuration, add `pip install` command in the Dockerfile and build your own Docker image. 
+Base on the docker configuration, add a `pip install` command in the Dockerfile and build your own Docker image. 
 ```Dockerfile
 RUN pip install --user airflow-provider-skypilot
 ```
@@ -61,7 +61,7 @@ x-airflow-common:
 ```
 This example mounts the cloud credentials for `AWS`, `Azure`, `GCP`, and `SCP`,
 which have been made by SkyPilot could account setup. 
-For SkyPilot metadata, check `.sky/` and `.ssh/` are placed in your `${HOME}` directory and mount them.  
+For SkyPilot metadata, check `.sky/` and `.ssh/` are placed in your `${HOME}` directory and mount them. 
 Additionally, you can mount your own directory like `sky_workdir/` for user resources including user codes and `yaml` task definition files for Skypilot execution.
 > Note that all Sky directories are mounted under `sky_home_dir/`. 
 > They will be symbolic-linked to `${HOME}/` in workers where a SkyPilot provider process actually runs. 
@@ -81,7 +81,7 @@ The SkyPilot provider includes the following operators:
 ```python
 sky_launch_task = SkyLaunchOperator(
     task_id="sky_launch_task",
-    sky_task_yaml="~/sky_workdir/sky_task.yaml",
+    sky_task_yaml="~/sky_workdir/my_task.yaml",
     cloud="cheapest", # aws|azure|gcp|scp|ibm ...
     gpus="A100:1",
     minimum_cpus=16,
@@ -91,7 +91,7 @@ sky_launch_task = SkyLaunchOperator(
     dag=dag
 )
 ```
-Once `SkyLaunchOperator` creates a Sky cluster with `auto_down=False`, the created cluster can be utilized by following Sky operators. 
+Once `SkyLaunchOperator` creates a Sky cluster with `auto_down=False`, the created cluster can be utilized by the other Sky operators. 
 Please refer to [an example dag](https://github.com/skypilot-sds/airflow-provider-skypilot/blob/master/skypilot_provider/example_dags/sky_airflow_example.py) for multiple Sky operators running on a single Sky cluster. 
 
 
