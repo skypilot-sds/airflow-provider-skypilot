@@ -35,8 +35,8 @@ for more information
 
 
 ## Configuration 
-The SkyPilot provider runs on a Airflow worker, but it stores its metadata in the Airflow master node. 
-This scheme allows the execution of consecutive sky tasks run across independent workers by sharing the metadata.
+A SkyPilot provider process runs on an Airflow worker, but it stores its metadata into the Airflow master node. 
+This scheme allows a set of consecutive sky tasks runs across multiple workers by sharing the metadata.
 
 Following settings in the `docker-compose.yaml` defines the data sharing, including cloud credentials, metadata and workspace. 
 
@@ -59,11 +59,12 @@ x-airflow-common:
       # mount sky working dir
       - ${HOME}/sky_workdir:/opt/airflow/sky_home_dir/sky_workdir
 ```
-This example mounts the cloud credentials for `AWS`, `Azure`, `GCP`, and `SCP`. 
-For SkyPilot metadata, mount `.sky/` and `.ssh/` directories. 
-The directory `sky_workdir/` is to share user resources including user codes and `yaml` task definition files for Skypilot execution.
-> Note that all sky directories are mounted under `sky_home_dir/`. 
-> They will be symbolic-linked to `${HOME}/` in workers by the setting an argument `sky_home_dir='/opt/airflow/sky_home_dir'` of Sky operators.  
+This example mounts the cloud credentials for `AWS`, `Azure`, `GCP`, and `SCP`,
+which have been made by SkyPilot could account setup. 
+For SkyPilot metadata, check `.sky/` and `.ssh/` are placed in your `${HOME}` directory and mount them.  
+Additionally, you can mount your own directory like `sky_workdir/` for user resources including user codes and `yaml` task definition files for Skypilot execution.
+> Note that all Sky directories are mounted under `sky_home_dir/`. 
+> They will be symbolic-linked to `${HOME}/` in workers where a SkyPilot provider process actually runs. 
 
 
 
@@ -90,8 +91,8 @@ sky_launch_task = SkyLaunchOperator(
     dag=dag
 )
 ```
-If `auto_down=False`, the other operators can be connected for further use of the created Sky cluster. 
-Please refer to [example dag](https://github.com/skypilot-sds/airflow-provider-skypilot/blob/master/skypilot_provider/example_dags/sky_airflow_example.py) for consecutive Sky tasks. 
+Once `SkyLaunchOperator` creates a Sky cluster with `auto_down=False`, the created cluster can be utilized by following Sky operators. 
+Please refer to [an example dag](https://github.com/skypilot-sds/airflow-provider-skypilot/blob/master/skypilot_provider/example_dags/sky_airflow_example.py) for multiple Sky operators running on a single Sky cluster. 
 
 
 
