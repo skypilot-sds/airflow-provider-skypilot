@@ -34,10 +34,10 @@ Please refer to [SkyPilot Installation](https://skypilot.readthedocs.io/en/lates
 
 
 ## Configuration 
-A SkyPilot provider process runs on an Airflow worker, but it stores its metadata into the Airflow master node. 
+A SkyPilot provider process runs on an Airflow worker, but stores its metadata into the Airflow master node. 
 This scheme allows a set of consecutive sky tasks runs across multiple workers by sharing the metadata.
 
-Following settings in the `docker-compose.yaml` defines the data sharing, including cloud credentials, metadata and workspace. 
+Following settings in the `docker-compose.yaml` defines the data mount, including cloud credentials, metadata and workspace. 
 
 ```yaml
 x-airflow-common:

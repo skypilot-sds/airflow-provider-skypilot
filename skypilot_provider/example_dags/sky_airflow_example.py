@@ -14,8 +14,8 @@ with DAG(
 ) as dag:
 
     """
-    For git operation, git should be installed in worker image
-    please add the below command in the Dockerfile 
+    For git operation, git should be installed in worker image,
+    so add the below command in the Dockerfile. 
     RUN apt update && apt install git -y
     """
     git_clone_or_update_cmd = """
