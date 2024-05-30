@@ -69,13 +69,13 @@ class SubprocessHook(BaseHook):
                 os.setsid()
 
             self.log.info("Running command: %s", command)
-
+            env = env if env or env == {} else os.environ
             self.sub_process = Popen(
                 command,
                 stdout=PIPE,
                 stderr=STDOUT,
                 cwd=cwd,
-                env=env if env or env == {} else os.environ,
+                env=env,
                 preexec_fn=pre_exec,
             )
 

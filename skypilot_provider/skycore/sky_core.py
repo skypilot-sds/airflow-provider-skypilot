@@ -148,8 +148,8 @@ class CloudVmRayBackendAirExtend(CloudVmRayBackend):
     ) -> Union[int, Tuple[int, str, str]]:
 
         # This will try to fetch the head node IP if it is not cached.
-        stream_logs = True
-        process_stream = True
+        stream_logs_override = True
+        process_stream_override = True
         external_ips = handle.external_ips(max_attempts=_FETCH_IP_MAX_ATTEMPTS)
         head_ip = external_ips[0]
         external_ssh_ports = handle.external_ssh_ports(
@@ -168,8 +168,8 @@ class CloudVmRayBackendAirExtend(CloudVmRayBackend):
             cmd,
             port_forward=port_forward,
             log_path=log_path,
-            process_stream=process_stream,
-            stream_logs=stream_logs,
+            process_stream=process_stream_override,
+            stream_logs=stream_logs_override,
             ssh_mode=ssh_mode,
             require_outputs=require_outputs,
             separate_stderr=separate_stderr,
