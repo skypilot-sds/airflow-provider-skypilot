@@ -14,13 +14,15 @@ import sky
 from sky.backends import backend_utils
 from sky.cli import _make_task_or_dag_from_entrypoint_with_overrides
 from sky import global_user_state, ClusterStatus, backends
+
+from skypilot_provider.operators import DEFAULT_SKY_HOME
 from skypilot_provider.skycore.sky_core import CloudVmRayBackendAirExtend
 from skypilot_provider.skycore.sky_log import SkyLogFilter
 
 if TYPE_CHECKING:
     from airflow.utils.context import Context
 
-DEFAULT_SKY_HOME = '/opt/airflow/sky_home_dir'
+
 
 def check_available_cluster(cluster_name, available_status_list):
     cluster_records = sky.status(cluster_names=[cluster_name], refresh=False)
