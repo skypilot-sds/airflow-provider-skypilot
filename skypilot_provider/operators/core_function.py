@@ -20,6 +20,7 @@ from skypilot_provider.skycore.sky_log import SkyLogFilter
 if TYPE_CHECKING:
     from airflow.utils.context import Context
 
+DEFAULT_SKY_HOME = '/opt/airflow/sky_home_dir'
 
 def check_available_cluster(cluster_name, available_status_list):
     cluster_records = sky.status(cluster_names=[cluster_name], refresh=False)
@@ -146,7 +147,7 @@ class SkyLaunchOperator(SkyBaseOperator):
             disk_size: int | None = None,
             auto_down: bool = True,
             image_id: str | None = None,
-            sky_home_dir: str = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = DEFAULT_SKY_HOME,
             **kwargs
     ) -> None:
         """Launches a cluster and executes a sky task.
@@ -239,7 +240,7 @@ class SkyExecOperator(SkyBaseOperator):
             *,
             cluster_name: str,
             sky_task_yaml: str,
-            sky_home_dir: str = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = DEFAULT_SKY_HOME,
             **kwargs
     ) -> None:
         """Executes a sky task on the specified cluster
@@ -301,7 +302,7 @@ class SkyDownOperator(SkyBaseOperator):
             self,
             *,
             cluster_name: str,
-            sky_home_dir: str = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = DEFAULT_SKY_HOME,
             **kwargs
     ) -> None:
         """Syncs down from the sky cloud instance to airflow worker.
