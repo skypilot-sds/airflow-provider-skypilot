@@ -6,17 +6,9 @@ from functools import cached_property
 
 from airflow.hooks.subprocess import SubprocessHook
 from airflow.utils.operator_helpers import context_to_airflow_vars
-from airflow.utils.context import  Context
-
-
-import contextlib
+from airflow.utils.context import Context
 import os
-import signal
 from collections import namedtuple
-from subprocess import PIPE, STDOUT, Popen
-from tempfile import TemporaryDirectory, gettempdir
-
-from airflow.hooks.base import BaseHook
 
 SubprocessResult = namedtuple("SubprocessResult", ["exit_code", "output"])
 
