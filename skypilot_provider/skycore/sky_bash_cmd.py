@@ -20,9 +20,6 @@ from airflow.hooks.base import BaseHook
 
 SubprocessResult = namedtuple("SubprocessResult", ["exit_code", "output"])
 
-
-
-
 class SkyBashCmd:
     def __init__(self,
                  bash_command: str,
