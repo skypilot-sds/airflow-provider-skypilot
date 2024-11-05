@@ -3,7 +3,13 @@ import datetime
 import pendulum
 from airflow import DAG
 from airflow.operators.bash import BashOperator
-from skypilot_provider.operators import *
+from skypilot_provider.operators import (
+    SkyLaunchOperator,
+    SkyExecOperator,
+    SkySSHOperator,
+    SkyDownOperator,
+    SkyRsyncDownOperator
+)
 
 with DAG(
     dag_id = "sky_airflow_example",

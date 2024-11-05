@@ -14,11 +14,14 @@ import sky
 from sky.backends import backend_utils
 from sky.cli import _make_task_or_dag_from_entrypoint_with_overrides
 from sky import global_user_state, ClusterStatus, backends
+
+from skypilot_provider.operators import DEFAULT_SKY_HOME
 from skypilot_provider.skycore.sky_core import CloudVmRayBackendAirExtend
 from skypilot_provider.skycore.sky_log import SkyLogFilter
 
 if TYPE_CHECKING:
     from airflow.utils.context import Context
+
 
 
 def check_available_cluster(cluster_name, available_status_list):
@@ -146,7 +149,7 @@ class SkyLaunchOperator(SkyBaseOperator):
             disk_size: int | None = None,
             auto_down: bool = True,
             image_id: str | None = None,
-            sky_home_dir: str = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = DEFAULT_SKY_HOME,
             **kwargs
     ) -> None:
         """Launches a cluster and executes a sky task.
@@ -239,7 +242,7 @@ class SkyExecOperator(SkyBaseOperator):
             *,
             cluster_name: str,
             sky_task_yaml: str,
-            sky_home_dir: str = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = DEFAULT_SKY_HOME,
             **kwargs
     ) -> None:
         """Executes a sky task on the specified cluster
@@ -301,7 +304,7 @@ class SkyDownOperator(SkyBaseOperator):
             self,
             *,
             cluster_name: str,
-            sky_home_dir: str = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = DEFAULT_SKY_HOME,
             **kwargs
     ) -> None:
         """Syncs down from the sky cloud instance to airflow worker.

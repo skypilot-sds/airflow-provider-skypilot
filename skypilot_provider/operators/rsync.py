@@ -8,6 +8,8 @@ from airflow import AirflowException
 
 from sky import ClusterStatus
 from sky.utils.command_runner import SSHCommandRunner
+
+from skypilot_provider.operators import DEFAULT_SKY_HOME
 from skypilot_provider.operators.core_function import SkyBaseOperator, check_available_cluster
 
 if TYPE_CHECKING:
@@ -28,7 +30,7 @@ class SkyRsyncOperator(SkyBaseOperator):
             source: str,
             target: str,
             up: bool,
-            sky_home_dir: str = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = DEFAULT_SKY_HOME,
             **kwargs
     ) -> None:
         super().__init__(sky_home_dir=sky_home_dir, **kwargs)
@@ -73,7 +75,7 @@ class SkyRsyncUpOperator(SkyRsyncOperator):
             cluster_name: str,
             source: str,
             target: str,
-            sky_home_dir: str = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = DEFAULT_SKY_HOME,
             **kwargs
     ) -> None:
         """Syncs up from the airflow worker to the sky cloud instance
@@ -104,7 +106,7 @@ class SkyRsyncDownOperator(SkyRsyncOperator):
             cluster_name: str,
             source: str,
             target: str,
-            sky_home_dir: str = '/opt/airflow/sky_home_dir',
+            sky_home_dir: str = DEFAULT_SKY_HOME,
             **kwargs
     ) -> None:
         """Syncs down from the sky cloud instance to airflow worker.
